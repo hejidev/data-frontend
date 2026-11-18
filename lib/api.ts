@@ -12,11 +12,17 @@ export class ApiError extends Error {
 }
 
 export async function apiRequest<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-    credentials: 'include', // session cookie
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+      credentials: 'include', // session cookie
+      signal: options.signal ?? AbortSignal.timeout(40_000), // never spin forever
+    });
+  } catch {
+    throw new ApiError('Cannot reach the server. Check your connection and try again.', 0);
+  }
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new ApiError(data.error || 'Something went wrong', response.status, data);
   return data as T;

@@ -1,7 +1,9 @@
 import { cache } from 'react';
 import { DEFAULT_SITE, type SiteSettings } from './site';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+const API_URL = process.env.API_INTERNAL_ORIGIN
+  ? `${process.env.API_INTERNAL_ORIGIN.replace(/\/+$/, '')}/api`
+  : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 /** Server-component fetch with ISR caching. Returns null on any failure. */
 export async function serverFetch<T>(path: string, revalidate = 60): Promise<T | null> {

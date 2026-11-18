@@ -28,17 +28,21 @@ function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setNeedsVerify(false);
-    const { data, error } = await authClient.signIn.email({ email, password });
-    setLoading(false);
-
-    if (error) {
-      if (error.status === 403 && /verif/i.test(error.message ?? '')) setNeedsVerify(true);
-      else toast.error(error.message || 'Login failed');
-      return;
+    try {
+      const { data, error } = await authClient.signIn.email({ email, password });
+      if (error) {
+        if (error.status === 403 && /verif/i.test(error.message ?? '')) setNeedsVerify(true);
+        else toast.error(error.message || 'Login failed');
+        return;
+      }
+      // When 2FA is on, the plugin has already redirected to /auth/two-factor.
+      if ((data as { twoFactorRedirect?: boolean } | null)?.twoFactorRedirect) return;
+      router.replace(continueUrl);
+    } catch {
+      toast.error('Cannot reach the server. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    // When 2FA is on, the plugin has already redirected to /auth/two-factor.
-    if ((data as { twoFactorRedirect?: boolean } | null)?.twoFactorRedirect) return;
-    router.replace(continueUrl);
   }
 
   async function resend() {

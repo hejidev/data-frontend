@@ -35,6 +35,11 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    const backend = process.env.API_INTERNAL_ORIGIN; // e.g. https://chepadata.onrender.com
+    if (!backend) return [];
+    return [{ source: '/api/:path*', destination: `${backend}/api/:path*` }];
+  },
 };
 
 // With no DSN (local development) Sentry is not loaded at all: faster dev, no warnings.

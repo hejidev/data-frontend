@@ -27,7 +27,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [agree, setAgree] = useState(false);
 
-  const site = useSite(); 
+  const site = useSite();
   const [ref, setRef] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,19 +50,24 @@ export default function SignupPage() {
     }
     setErrors({});
     setLoading(true);
-    const { error } = await authClient.signUp.email({
-      name: parsed.data.full_name,
-      email: parsed.data.email,
-      password: parsed.data.password,
-      phone: parsed.data.phone || undefined,
-      callbackURL: `${window.location.origin}/auth/continue`,
-    });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message || 'Signup failed');
-      return;
+    try {
+      const { error } = await authClient.signUp.email({
+        name: parsed.data.full_name,
+        email: parsed.data.email,
+        password: parsed.data.password,
+        phone: parsed.data.phone || undefined,
+        callbackURL: `${window.location.origin}/auth/continue`,
+      });
+      if (error) {
+        toast.error(error.message || 'Signup failed');
+        return;
+      }
+      router.push(`/auth/verify-email?email=${encodeURIComponent(parsed.data.email)}`);
+    } catch {
+      toast.error('Cannot reach the server. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    router.push(`/auth/verify-email?email=${encodeURIComponent(parsed.data.email)}`);
   }
 
   async function google() {
