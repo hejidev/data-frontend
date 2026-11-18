@@ -18,8 +18,15 @@ const csp = [
 ].join('; ');
 
 const nextConfig: NextConfig = {
-  turbopack: { root: process.cwd() }, // silences "multiple lockfiles" (run from the frontend folder)
+  turbopack: { root: process.cwd() },
   images: { remotePatterns: [{ protocol: 'https', hostname: 'res.cloudinary.com' }] },
+  // The browser only ever talks to this site; Vercel forwards /api/* to the backend.
+  // That makes the login cookie first-party, so it is stored and sent normally.
+  async rewrites() {
+    const backend = process.env.API_INTERNAL_ORIGIN?.replace(/\/+$/, '');
+    if (!backend) return [];
+    return [{ source: '/api/:path*', destination: `${backend}/api/:path*` }];
+  },
   async headers() {
     return [
       {
@@ -35,14 +42,8 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  async rewrites() {
-    const backend = process.env.API_INTERNAL_ORIGIN; // e.g. https://chepadata.onrender.com
-    if (!backend) return [];
-    return [{ source: '/api/:path*', destination: `${backend}/api/:path*` }];
-  },
 };
 
-// With no DSN (local development) Sentry is not loaded at all: faster dev, no warnings.
 export default process.env.NEXT_PUBLIC_SENTRY_DSN
   ? withSentryConfig(nextConfig, {
       org: process.env.SENTRY_ORG,
